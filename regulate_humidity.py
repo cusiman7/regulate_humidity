@@ -29,6 +29,7 @@ for addr, device in devices.items():
 
 if not mush_device:
     logging.error('Failed to find the Mushroom smart plug')
+    dht22.exit()
     sys.exit(1)
 
 logging.debug('Found Mushroom device')
@@ -44,6 +45,7 @@ while attempts > 0:
 
 if not humidity:
     logging.error('Failed to read humidity from the DHT22')
+    dht22.exit()
     sys.exit(1)
 
 if humidity < 85 and mush_device.is_off:
@@ -55,4 +57,6 @@ elif humidity > 90 and mush_device.is_on:
 else:
     plug_status_str = 'on' if mush_device.is_on else 'off'
     logging.debug('No action required. Humidity is %.2f and Mushroom plug is %s', humidity, plug_status_str)
+
+dht22.exit()
 
