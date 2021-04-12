@@ -13,7 +13,7 @@ import sys
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 logging.basicConfig(filename=os.path.join(script_dir, 'regulate_humidity.log'),
-                     format='%(asctime)s %(message)s', level=logging.DEBUG)
+                     format='%(asctime)s %(message)s', level=logging.INFO)
 
 dht22 = adafruit_dht.DHT22(D2)
 logging.debug('Found DHT22 device')
@@ -40,20 +40,19 @@ while attempts > 0:
         break
     except RuntimeError:
         attempts -= 1
-        logging.warning('Failed to read from DHT22. Will sleep 2s and try %d more times', attempts)
         time.sleep(2) # Can only read DHT22 every 2 seconds
 
 if not humidity:
     logging.error('Failed to read humidity from the DHT22')
     sys.exit(1)
 
-if humidity < 85:
+if humidity < 85 and mush_device.is_off:
     logging.info('Humidity is %.2f. Turning mushroom plug on', humidity)
     asyncio.run(mush_device.turn_on())
-elif humidity > 90:
+elif humidity > 90 and mush_device.is_on:
     logging.info('Humidity is %.2f. Turning mushroom plug off', humidity)
     asyncio.run(mush_device.turn_off())
 else:
     plug_status_str = 'on' if mush_device.is_on else 'off'
-    logging.info('No action required. Humidity is %.2f and Mushroom plug is %s', humidity, plug_status_str)
+    logging.debug('No action required. Humidity is %.2f and Mushroom plug is %s', humidity, plug_status_str)
 
