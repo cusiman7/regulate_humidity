@@ -8,11 +8,9 @@ from kasa import Discover
 
 import time
 import logging
-import os
 import sys
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-logging.basicConfig(filename=os.path.join(script_dir, 'regulate_humidity.log'),
+logging.basicConfig(filename='/var/log/regulate_humidity/regulate_humidity.log',
                      format='%(asctime)s %(message)s', level=logging.INFO)
 
 dht22 = adafruit_dht.DHT22(D2)
@@ -56,7 +54,7 @@ elif humidity > 90 and mush_device.is_on:
     asyncio.run(mush_device.turn_off())
 else:
     plug_status_str = 'on' if mush_device.is_on else 'off'
-    logging.debug('No action required. Humidity is %.2f and Mushroom plug is %s', humidity, plug_status_str)
+    logging.info('No action required. Humidity is %.2f and Mushroom plug is %s', humidity, plug_status_str)
 
 dht22.exit()
 
