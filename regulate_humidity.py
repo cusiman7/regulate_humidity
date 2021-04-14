@@ -46,10 +46,10 @@ if not humidity:
     dht22.exit()
     sys.exit(1)
 
-if humidity < 85 and mush_device.is_off:
+if humidity <= 90 and mush_device.is_off:
     logging.info('Humidity is %.2f. Turning mushroom plug on', humidity)
     asyncio.run(mush_device.turn_on())
-elif humidity > 90 and mush_device.is_on:
+elif humidity >= 95 and mush_device.is_on:
     logging.info('Humidity is %.2f. Turning mushroom plug off', humidity)
     asyncio.run(mush_device.turn_off())
 else:
