@@ -10,6 +10,10 @@ import time
 import logging
 import sys
 
+# Configs
+HUMIDITY_LOW = 93
+HUMIDITY_HIGH = 98
+
 logging.basicConfig(filename='/var/log/regulate_humidity/regulate_humidity.log',
                      format='%(asctime)s %(message)s', level=logging.INFO)
 
@@ -46,11 +50,11 @@ if not humidity:
     dht22.exit()
     sys.exit(1)
 
-if humidity <= 90 and mush_device.is_off:
-    logging.info('Humidity is %.2f. Turning mushroom plug on', humidity)
+if humidity <= HUMIDITY_LOW  and mush_device.is_off:
+    logging.info('Humidity is %.2f. Turning mushroom plug on \\(^w^)/', humidity)
     asyncio.run(mush_device.turn_on())
-elif humidity >= 95 and mush_device.is_on:
-    logging.info('Humidity is %.2f. Turning mushroom plug off', humidity)
+elif humidity >= HUMIDITY_HIGH and mush_device.is_on:
+    logging.info('Humidity is %.2f. Turning mushroom plug off /(-_-)\\', humidity)
     asyncio.run(mush_device.turn_off())
 else:
     plug_status_str = 'on' if mush_device.is_on else 'off'
