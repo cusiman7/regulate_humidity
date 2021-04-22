@@ -17,48 +17,55 @@ HUMIDITY_HIGH = 98
 logging.basicConfig(filename='/var/log/regulate_humidity/regulate_humidity.log',
                      format='%(asctime)s %(message)s', level=logging.INFO)
 
-dht22 = adafruit_dht.DHT22(D2)
-logging.debug('Found DHT22 device')
-devices = asyncio.run(Discover.discover())
 
-humidity = None
-mush_device = None
+def regulate_humidity(dht22):
+    devices = asyncio.run(Discover.discover())
 
-for addr, device in devices.items():
-    asyncio.run(device.update())
-    if 'Mushroom' in device.alias:
-        mush_device = device
+    humidity = None
+    mush_device = None
 
-if not mush_device:
-    logging.error('Failed to find the Mushroom smart plug')
+    for addr, device in devices.items():
+        asyncio.run(device.update())
+        if 'Mushroom' in device.alias:
+            mush_device = device
+
+    if not mush_device:
+        logging.error('Failed to find the Mushroom smart plug')
+        return
+
+    logging.debug('Found Mushroom device')
+
+    attempts = 5
+    while attempts > 0:
+        try:
+            humidity = dht22.humidity
+            break
+        except RuntimeError:
+            attempts -= 1
+            time.sleep(2) # Can only read DHT22 every 2 seconds
+
+    if not humidity:
+        logging.error('Failed to read humidity from the DHT22')
+        return
+
+    if humidity <= HUMIDITY_LOW  and mush_device.is_off:
+        logging.info('Humidity is %.2f. Turning mushroom plug on \\(^w^)/', humidity)
+        asyncio.run(mush_device.turn_on())
+    elif humidity >= HUMIDITY_HIGH and mush_device.is_on:
+        logging.info('Humidity is %.2f. Turning mushroom plug off /(-_-)\\', humidity)
+        asyncio.run(mush_device.turn_off())
+    else:
+        plug_status_str = 'on' if mush_device.is_on else 'off'
+        logging.info('No action required. Humidity is %.2f and Mushroom plug is %s', humidity, plug_status_str)
+
+
+dht22 = None
+try:
+    dht22 = adafruit_dht.DHT22(D2)
+    regulate_humidity(dht22)
+except Exception as e:
+    logging.error('Failed to regulate humidity with exception {}'.format(e))
+
+if dht22 is not None:
     dht22.exit()
-    sys.exit(1)
-
-logging.debug('Found Mushroom device')
-
-attempts = 5
-while attempts > 0:
-    try:
-        humidity = dht22.humidity
-        break
-    except RuntimeError:
-        attempts -= 1
-        time.sleep(2) # Can only read DHT22 every 2 seconds
-
-if not humidity:
-    logging.error('Failed to read humidity from the DHT22')
-    dht22.exit()
-    sys.exit(1)
-
-if humidity <= HUMIDITY_LOW  and mush_device.is_off:
-    logging.info('Humidity is %.2f. Turning mushroom plug on \\(^w^)/', humidity)
-    asyncio.run(mush_device.turn_on())
-elif humidity >= HUMIDITY_HIGH and mush_device.is_on:
-    logging.info('Humidity is %.2f. Turning mushroom plug off /(-_-)\\', humidity)
-    asyncio.run(mush_device.turn_off())
-else:
-    plug_status_str = 'on' if mush_device.is_on else 'off'
-    logging.info('No action required. Humidity is %.2f and Mushroom plug is %s', humidity, plug_status_str)
-
-dht22.exit()
 
